@@ -28,6 +28,9 @@ msgstr ""
 msgid "Distance"
 msgstr ""
 
+msgid "Domain"
+msgstr ""
+
 msgid "Error"
 msgstr ""
 
@@ -82,7 +85,13 @@ msgstr ""
 msgid "Received"
 msgstr ""
 
+msgid "Role"
+msgstr ""
+
 msgid "Status"
+msgstr ""
+
+msgid "Site"
 msgstr ""
 
 msgid "Traffic"
