@@ -341,6 +341,10 @@ ramips-mt7620
 ramips-mt7621
 ^^^^^^^^^^^^^
 
+* TP-Link
+
+  - RE350 v1 [#80211s]_
+
 * Ubiquiti
 
   - EdgeRouter X
