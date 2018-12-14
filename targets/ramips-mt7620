@@ -1,3 +1,7 @@
+# ASUS
+device asus-rt-ac51u rt-ac51u
+factory
+
 # GL Innovations
 
 device gl-mt300a gl-mt300a

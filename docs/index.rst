@@ -346,6 +346,10 @@ mpc85xx-generic
 ramips-mt7620
 ^^^^^^^^^^^^^
 
+* ASUS
+
+  - RT-AC51U [#80211s]_
+
 * GL Innovations
 
   - GL-MT300A [#80211s]_
