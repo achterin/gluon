@@ -325,6 +325,7 @@ ramips-mt7621
 * NETGEAR
 
   - R6220
+  - R6350
 
 * Ubiquiti
 
