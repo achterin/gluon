@@ -1,0 +1,254 @@
+From: Christoph Krapp <krapp@chemmedia.de>
+Date: Mon, 20 Jan 2020 20:25:46 +0100
+Subject: ramips: add support for NETGEAR R6260
+
+diff --git a/target/linux/ramips/base-files/etc/board.d/01_leds b/target/linux/ramips/base-files/etc/board.d/01_leds
+index 0845db393d76632e1af2e63e9a8fb1df611c9218..aa808083b78c198e4c53e49bdcadd096406fa449 100755
+--- a/target/linux/ramips/base-files/etc/board.d/01_leds
++++ b/target/linux/ramips/base-files/etc/board.d/01_leds
+@@ -277,6 +277,7 @@ px-4885-8M)
+ 	set_wifi_led "px-4885:orange:wifi"
+ 	;;
+ r6220|\
++netgear,r6260|\
+ netgear,r6350|\
+ wndr3700v5)
+ 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x10"
+diff --git a/target/linux/ramips/base-files/etc/board.d/02_network b/target/linux/ramips/base-files/etc/board.d/02_network
+index f743ce851ad335ad1d81638ce5d2dda4e7df1620..0c374bb306b683bc457f467df538498b86dda91d 100755
+--- a/target/linux/ramips/base-files/etc/board.d/02_network
++++ b/target/linux/ramips/base-files/etc/board.d/02_network
+@@ -173,6 +173,7 @@ ramips_setup_interfaces()
+ 	alfa-network,quad-e4g|\
+ 	netgear,r6120|\
+ 	r6220|\
++	netgear,r6260|\
+ 	netgear,r6350|\
+ 	wndr3700v5)
+ 		ucidef_add_switch "switch0" \
+@@ -574,6 +575,7 @@ ramips_setup_macs()
+ 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
+ 		;;
+ 	edimax,br-6478ac-v2|\
++	netgear,r6260|\
+ 	netgear,r6350)
+ 		lan_mac=$(cat /sys/class/net/eth0/address)
+ 		wan_mac=$(macaddr_add "$lan_mac" 2)
+diff --git a/target/linux/ramips/base-files/lib/upgrade/platform.sh b/target/linux/ramips/base-files/lib/upgrade/platform.sh
+index 3b967aac871ed48e6f3163bac9ed14cc4b7b52c0..6298cd61b398a7fa607f84e58383f86280f3481d 100755
+--- a/target/linux/ramips/base-files/lib/upgrade/platform.sh
++++ b/target/linux/ramips/base-files/lib/upgrade/platform.sh
+@@ -57,6 +57,7 @@ platform_do_upgrade() {
+ 		;;
+ 	hc5962|\
+ 	r6220|\
++	netgear,r6260|\
+ 	netgear,r6350|\
+ 	ubnt-erx|\
+ 	ubnt-erx-sfp|\
+diff --git a/target/linux/ramips/dts/R6260.dts b/target/linux/ramips/dts/R6260.dts
+new file mode 100644
+index 0000000000000000000000000000000000000000..b87a2ffe0d5858f049679c958bc6b6f5e9a0a52a
+--- /dev/null
++++ b/target/linux/ramips/dts/R6260.dts
+@@ -0,0 +1,167 @@
++// SPDX-License-Identifier: GPL-2.0
++/dts-v1/;
++
++#include "mt7621.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	compatible = "netgear,r6260", "mediatek,mt7621-soc";
++	model = "Netgear R6260";
++
++	aliases {
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x8000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,57600";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_power: power {
++			label = "r6260:green:power";
++			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
++		};
++
++		usb {
++			label = "r6260:green:usb";
++			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
++			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
++			linux,default-trigger = "usbport";
++		};
++
++		internet {
++			label = "r6260:green:wan";
++			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
++		};
++
++		wifi {
++			label = "r6260:green:wifi";
++			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "phy0tpt";
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys-polled";
++		poll-interval = <20>;
++
++		wps {
++			label = "wps";
++			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
++		};
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	gpio_export {
++		compatible = "gpio-export";
++		#size-cells = <0>;
++
++		usbpower {
++			gpio-export,name = "usbpower";
++			gpio-export,output = <1>;
++			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&nand {
++	status = "okay";
++
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			label = "u-boot";
++			reg = <0x0 0x100000>;
++			read-only;
++		};
++
++		partition@100000 {
++			label = "SC PART_MAP";
++			reg = <0x100000 0x100000>;
++			read-only;
++		};
++
++		partition@200000 {
++			label = "kernel";
++			reg = <0x200000 0x400000>;
++		};
++
++		partition@600000 {
++			label = "ubi";
++			reg = <0x600000 0x2800000>;
++		};
++
++		partition@2e00000 {
++			label = "reserved0";
++			reg = <0x2e00000 0x1800000>;
++			read-only;
++		};
++
++		factory: partition@4600000 {
++			label = "factory";
++			reg = <0x4600000 0x200000>;
++			read-only;
++		};
++
++		partition@4800000 {
++			label = "reserved1";
++			reg = <0x4800000 0x3800000>;
++			read-only;
++		};
++	};
++};
++
++&pcie {
++	status = "okay";
++};
++
++&pcie0 {
++	wifi@0,0 {
++		compatible = "mediatek,mt76";
++		reg = <0x0 0 0 0 0>;
++		mediatek,mtd-eeprom = <&factory 0x8000>;
++		ieee80211-freq-limit = <5000000 6000000>;
++	};
++};
++
++&pcie1 {
++	wifi@0,0 {
++		reg = <0x0 0 0 0 0>;
++		mediatek,mtd-eeprom = <&factory 0x0>;
++		ieee80211-freq-limit = <2400000 2500000>;
++	};
++};
++
++&ethernet {
++	mtd-mac-address = <&factory 0x4>;
++};
++
++&pinctrl {
++	state_default: pinctrl0 {
++		gpio {
++			ralink,group = "uart3", "uart2", "jtag", "wdt";
++			ralink,function = "gpio";
++		};
++	};
++};
+diff --git a/target/linux/ramips/image/mt7621.mk b/target/linux/ramips/image/mt7621.mk
+index 8efda0784c1ce0aa08557b583e216bf0bfdd9976..3c4ba1e84b67dcea6912cc0ebf050eb186f4cf70 100644
+--- a/target/linux/ramips/image/mt7621.mk
++++ b/target/linux/ramips/image/mt7621.mk
+@@ -361,6 +361,28 @@ define Device/netgear_ex6150
+ endef
+ TARGET_DEVICES += netgear_ex6150
+ 
++define Device/netgear_r6260
++  DTS := R6260
++  BLOCKSIZE := 128k
++  PAGESIZE := 2048
++  KERNEL_SIZE := 4096k
++  IMAGE_SIZE := 40960k
++  UBINIZE_OPTS := -E 5
++  SERCOMM_HWID := CHJ
++  SERCOMM_HWVER := A001
++  SERCOMM_SWVER := 0x0052
++  IMAGES += factory.img kernel.bin rootfs.bin
++  IMAGE/factory.img := pad-extra 2048k | append-kernel | pad-to 6144k | append-ubi | \
++	pad-to $$$$(BLOCKSIZE) | sercom-footer | pad-to 128 | zip $$$$(DEVICE_MODEL).bin | sercom-seal
++  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
++  IMAGE/kernel.bin := append-kernel
++  IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
++  DEVICE_TITLE := Netgear R6260
++  DEVICE_PACKAGES := \
++	kmod-mt7603 kmod-mt7615e kmod-usb3 kmod-usb-ledtrig-usbport wpad-basic
++endef
++TARGET_DEVICES += netgear_r6260
++
+ define Device/netgear_r6350
+   DTS := R6350
+   BLOCKSIZE := 128k
